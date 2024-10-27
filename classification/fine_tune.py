@@ -199,6 +199,7 @@ def fine_tune():
     utils.load_state_dict(model, state_dict)
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
     model.to(device)
+    model.head = nn.Linear(in_features=220, out_features=args.nb_classes, bias=True)
     train_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device = device)
 
 fine_tune()
