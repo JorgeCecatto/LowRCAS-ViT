@@ -16,6 +16,7 @@ from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.utils import ModelEma
 from torch import optim
 from model import *
+from model import RCViTWithAdapters
 from timm.data.constants import \
     IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
 from timm.data import create_transform
@@ -114,11 +115,11 @@ def get_args_parser():
 
     return parser.parse_args()
 
-def train_routine(model, patience_time, dl_train, dl_valid,lr, device):
+def training_routine(model, patience_time, dl_train, dl_valid,lr, device):
     loss_train = []
     loss_eval  = []
     criterion = nn.CrossEntropyLoss()
-    opt = optim.SGD(model.parameters(),lr=lr)
+    opt = optim.AdamW(model.parameters(), lr=lr, weight_decay=0.05)
     epochs = 100
 
     stop = False
@@ -183,8 +184,47 @@ def fine_tune():
         )
     dataset = CustomDataset(args.data_path, transform=transform)
     dl_train, dl_val, dl_test = get_tt_split(dataset, args.batch_size)
-    model = create_model(
-        "rcvit_xs",
+    device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+    if(args.adapters == True):
+        tuning_config = SimpleNamespace(
+        _device = device,
+        ffn_num = 96,
+        ffn_adapt = "True",
+        ffn_option = "parallel",
+        ffn_adapter_init_option = 'lora',
+        ffn_adapter_scalar = 1.0,
+        ffn_adapter_layernorm_option = "in"
+        )
+        model = create_model(
+            "rcvit_xs",
+            pretrained=False,
+            num_classes=1000,
+            drop_path_rate=0.0,
+            layer_scale_init_value=1e-6,
+            head_init_scale=1.0,
+            input_res=384,
+            classifier_dropout=0.0,
+            distillation=False
+        )
+        model = RCViTWithAdapters(
+            model = args.model,
+            finetune = args.finetune,
+            pretrained=False,
+            num_classes=1000,
+            drop_path_rate=0.0,
+            layer_scale_init_value=1e-6,
+            head_init_scale=1.0,
+            input_res=384,
+            classifier_dropout=0.0,
+            distillation=False,
+            tuning_config = tuning_config,
+            training = True,
+            device = device
+        )
+        
+    else:
+        model = create_model(
+        args.model,
         pretrained=False,
         num_classes=1000,
         drop_path_rate=0.0,
@@ -194,12 +234,16 @@ def fine_tune():
         classifier_dropout=0.0,
         distillation=False
     )
-    checkpoint = torch.load(args.finetune, map_location="cpu")
-    state_dict = checkpoint["model"]
-    utils.load_state_dict(model, state_dict)
-    device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+        checkpoint = torch.load(args.finetune, map_location="cpu")
+        state_dict = checkpoint["model"]
+        utils.load_state_dict(model, state_dict)
+        device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+        model.to(device)
+        model.head = nn.Linear(in_features=220, out_features=args.nb_classes, bias=True)
+
     model.to(device)
-    model.head = nn.Linear(in_features=220, out_features=args.nb_classes, bias=True)
-    train_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device = device)
+    pred = model(torch.randn(1, 3, 384, 384))
+    print(pred)
+    training_routine(model, 15, dl_train, dl_valid=dl_val)
 
 fine_tune()
