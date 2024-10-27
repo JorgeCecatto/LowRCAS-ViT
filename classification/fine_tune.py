@@ -114,12 +114,11 @@ def get_args_parser():
 
     return parser.parse_args()
 
-def train_routine(model, patience_time, dl_train, dl_valid):
-    device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+def train_routine(model, patience_time, dl_train, dl_valid,lr, device):
     loss_train = []
     loss_eval  = []
     criterion = nn.CrossEntropyLoss()
-    opt = optim.SGD(model.parameters(),lr=0.01)
+    opt = optim.SGD(model.parameters(),lr=lr)
     epochs = 100
 
     stop = False
@@ -198,6 +197,8 @@ def fine_tune():
     checkpoint = torch.load(args.finetune, map_location="cpu")
     state_dict = checkpoint["model"]
     utils.load_state_dict(model, state_dict)
-    train_routine(model, 15, dl_train, dl_valid=dl_val)
+    device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+    model.to(device)
+    train_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device = device)
 
 fine_tune()
