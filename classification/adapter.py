@@ -24,7 +24,7 @@ class Adapter(nn.Module):
         self.drop_dimensions = drop_dimensions
         #_before
         self.adapter_layernorm_option = adapter_layernorm_option
-
+        self.config = config
         self.adapter_layer_norm_before = None
         if adapter_layernorm_option == "in" or adapter_layernorm_option == "out":
             self.adapter_layer_norm_before = nn.LayerNorm(self.n_embd)
@@ -64,7 +64,7 @@ class Adapter(nn.Module):
             up = self.adapter_layer_norm_before(up)
 
         if len(self.drop_dimensions) != 0:
-            drop_dim = nn.Conv2d(self.drop_dimensions[0], self.drop_dimensions[1], 3, stride=2, padding=1)
+            drop_dim = nn.Conv2d(self.drop_dimensions[0], self.drop_dimensions[1], 3, stride=2, padding=1).to(self.config._device)
             up = drop_dim(up)
         if add_residual:
             output = up + residual

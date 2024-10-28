@@ -187,7 +187,7 @@ class RCViT(nn.Module):
         self.fork_feat = fork_feat
 
         self.patch_embed = stem(3, embed_dims[0])
-
+        self.embed_dims = embed_dims
         network = []
         for i in range(len(layers)):
             stage = Stage(embed_dims[i], i, layers, mlp_ratio=mlp_ratios, act_layer=act_layer,

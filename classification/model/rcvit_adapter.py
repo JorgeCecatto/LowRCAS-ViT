@@ -34,7 +34,7 @@ class RCViTWithAdapters(nn.Module):
         )
         self.config = tuning_config
         self.config.d_model = tuning_config.ffn_num
-        self._device = tuning_config._device
+        self.config._device = tuning_config._device
         if finetune is not None:
                 checkpoint = torch.load(finetune, map_location="cpu")
                 state_dict = checkpoint["model"]
@@ -64,7 +64,7 @@ class RCViTWithAdapters(nn.Module):
                                         init_option=config.ffn_adapter_init_option,
                                         adapter_scalar=config.ffn_adapter_scalar,
                                         adapter_layernorm_option=config.ffn_adapter_layernorm_option, drop_dimensions = drop_dimensions
-                                        ).to(self._device)
+                                        ).to(self.config._device)
                 self.adapter_list.append(adapter)
             self.adapter_list.requires_grad_(True)
         else:
