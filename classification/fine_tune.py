@@ -112,6 +112,8 @@ def get_args_parser():
 
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
+    parser.add_argument('--adapters', default=True, type=str,
+                        help='choose the use of adapters')
 
     return parser.parse_args()
 
@@ -237,13 +239,9 @@ def fine_tune():
         checkpoint = torch.load(args.finetune, map_location="cpu")
         state_dict = checkpoint["model"]
         utils.load_state_dict(model, state_dict)
-        device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
-        model.to(device)
         model.head = nn.Linear(in_features=220, out_features=args.nb_classes, bias=True)
 
     model.to(device)
-    pred = model(torch.randn(1, 3, 384, 384))
-    print(pred)
-    training_routine(model, 15, dl_train, dl_valid=dl_val)
+    training_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device=device)
 
 fine_tune()
