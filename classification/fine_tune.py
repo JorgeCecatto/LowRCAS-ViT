@@ -197,17 +197,6 @@ def fine_tune():
         ffn_adapter_scalar = 1.0,
         ffn_adapter_layernorm_option = "in"
         )
-        model = create_model(
-            "rcvit_xs",
-            pretrained=False,
-            num_classes=1000,
-            drop_path_rate=0.0,
-            layer_scale_init_value=1e-6,
-            head_init_scale=1.0,
-            input_res=384,
-            classifier_dropout=0.0,
-            distillation=False
-        )
         model = RCViTWithAdapters(
             model = args.model,
             finetune = args.finetune,
