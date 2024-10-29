@@ -24,6 +24,19 @@ from manager_dataset import CustomDataset, get_tt_split
 import utils as utils
 import sklearn.metrics as metrics
 
+def str2bool(v):
+    """
+    Converts string to bool type; enables command line 
+    arguments in the format of '--arg1 true --arg2 false'
+    """
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 def get_args_parser():
     parser = argparse.ArgumentParser('CAS-ViT training and evaluation script for image classification', add_help=False)
     parser.add_argument('--batch_size', default=8, type=int,
@@ -113,8 +126,10 @@ def get_args_parser():
 
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
-    parser.add_argument('--adapters', default=True, type=bool,
+    parser.add_argument('--adapters', default=True, type=str2bool,
                         help='choose the use of adapters')
+    parser.add_argument('--mode', default=True, type=str,
+                        help='choose the mode training/eval')
 
     return parser.parse_args()
 
@@ -182,8 +197,12 @@ def evaluate_routine(model, dl_test, device):
             res  = pred.argmax(dim=1).cpu().tolist()
             lres += res
             ytrue += target
-    print(metrics.confusion_matrix(ytrue,lres))
-    print(metrics.classification_report(ytrue,lres))
+    confusion = metrics.confusion_matrix(ytrue,lres)
+    class_report = metrics.classification_report(ytrue,lres)
+    with open('classification_report.txt', 'w') as f:
+        f.write(class_report)
+    with open('confusion_matrix.txt', 'w') as f:
+        f.write(confusion)
 
 
 def fine_tune():
@@ -200,8 +219,7 @@ def fine_tune():
             mean=IMAGENET_DEFAULT_MEAN,
             std=IMAGENET_DEFAULT_STD,
         )
-    dataset = CustomDataset(args.data_path, transform=transform)
-    dl_train, dl_val, dl_test = get_tt_split(dataset, args.batch_size)
+    
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
     if(args.adapters == True):
         print("Estou usando adapters")
@@ -248,7 +266,16 @@ def fine_tune():
         model.head = nn.Linear(in_features=220, out_features=args.nb_classes, bias=True)
 
     model.to(device)
-    training_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device=device)
-    evaluate_routine(model, dl_test, device)
+
+    if (args.mode =='train'):
+        dataset = CustomDataset(args.data_path, transform=transform)
+        dl_train, dl_val, dl_test = get_tt_split(dataset, args.batch_size)
+        training_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device=device)
+        evaluate_routine(model, dl_test, device)
+    elif (args.mode == 'eval'):
+        dataset = CustomDataset(args.eval_datapath, transform=transform)
+        dl_eval = torch.utils.data.DataLoader(dataset,batch_size=args.batch_size)
+        evaluate_routine(model, dl_eval, device)
+
 
 fine_tune()
