@@ -13,7 +13,7 @@ from adapter import Adapter
 import math
 import numpy as np
 class RCViTWithAdapters(nn.Module):
-    def __init__(self, model='rcvit_xs', pretrained=False, num_classes=1000, drop_path_rate=0.0, layer_scale_init_value=1e-6, head_init_scale=1.0,input_res=384,
+    def __init__(self, model='rcvit_xs', pretrained=False, num_classes=2, drop_path_rate=0.0, layer_scale_init_value=1e-6, head_init_scale=1.0,input_res=384,
         classifier_dropout=0.0, distillation=False, tuning_config = None, device = 'cuda:0', training = False, finetune=None, **kwargs):
 
         super(RCViTWithAdapters, self).__init__()
@@ -50,7 +50,7 @@ class RCViTWithAdapters(nn.Module):
         self.dimensions = []
         self.get_size_of_embeddings()
         self.get_new_adapter()
-        self.head = nn.Linear(in_features=220, out_features=2, bias=True)
+        self.head = nn.Linear(in_features=220, out_features=num_classes, bias=True)
 
     def get_new_adapter(self):
         config = self.config

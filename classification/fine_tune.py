@@ -22,6 +22,7 @@ from timm.data.constants import \
 from timm.data import create_transform
 from manager_dataset import CustomDataset, get_tt_split
 import utils as utils
+import sklearn.metrics as metrics
 
 def get_args_parser():
     parser = argparse.ArgumentParser('CAS-ViT training and evaluation script for image classification', add_help=False)
@@ -170,6 +171,21 @@ def training_routine(model, patience_time, dl_train, dl_valid,lr, device):
         print("epoch %d loss_train %4.3f loss_eval %4.3f last_best %d"%(epoch,loss_train[-1],loss_eval[-1],last_best_result))
         epoch += 1
 
+def evaluate_routine(model, dl_test, device):
+    model.eval()
+    lres = []
+    ytrue = []
+    with torch.no_grad():
+        for data,target in dl_test:
+            data = data.to(device)
+            pred = model(data)
+            res  = pred.argmax(dim=1).cpu().tolist()
+            lres += res
+            ytrue += target
+    print(metrics.confusion_matrix(ytrue,lres))
+    print(metrics.classification_report(ytrue,lres))
+
+
 def fine_tune():
     args = get_args_parser()
     transform = create_transform(
@@ -202,7 +218,7 @@ def fine_tune():
             model = args.model,
             finetune = args.finetune,
             pretrained=False,
-            num_classes=1000,
+            num_classes=args.nb_classes,
             drop_path_rate=0.0,
             layer_scale_init_value=1e-6,
             head_init_scale=1.0,
@@ -233,5 +249,6 @@ def fine_tune():
 
     model.to(device)
     training_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device=device)
+    evaluate_routine(model, dl_test, device)
 
 fine_tune()
