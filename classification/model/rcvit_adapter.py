@@ -47,6 +47,7 @@ class RCViTWithAdapters(nn.Module):
         self.adapter_list = nn.ModuleList()
         self.dimensions_in = []
         self.dimensions_out = []
+        self.dimensions = []
         self.get_size_of_embeddings()
         self.get_new_adapter()
         self.head = nn.Linear(in_features=220, out_features=2, bias=True)
@@ -55,8 +56,8 @@ class RCViTWithAdapters(nn.Module):
         config = self.config
         if config.ffn_adapt:
             for i in range(len(self.rcvit.network)):
-                self.config.d_model = self.dimensions_in[i]
-                config.ffn_num = self.dimensions_out[i]
+                self.config.d_model = self.dimensions[i]
+                config.ffn_num = self.dimensions_in[i]
                 drop_dimensions = []
                 if self.dimensions_in[i] !=self.dimensions_out[i]:
                   drop_dimensions = [self.rcvit.embed_dims[int(np.floor(i/2))], self.rcvit.embed_dims[int(np.ceil(i/2))]]
@@ -76,6 +77,7 @@ class RCViTWithAdapters(nn.Module):
         x = self.rcvit.patch_embed(x)
         for idx, block in enumerate(self.rcvit.network):
           self.dimensions_in.append(x.size(3))
+          self.dimensions.append(x.size(1))
           x = block(x)
           self.dimensions_out.append(x.size(3))
 

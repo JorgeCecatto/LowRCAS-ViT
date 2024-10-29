@@ -112,7 +112,7 @@ def get_args_parser():
 
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
-    parser.add_argument('--adapters', default=True, type=str,
+    parser.add_argument('--adapters', default=True, type=bool,
                         help='choose the use of adapters')
 
     return parser.parse_args()
@@ -188,6 +188,7 @@ def fine_tune():
     dl_train, dl_val, dl_test = get_tt_split(dataset, args.batch_size)
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
     if(args.adapters == True):
+        print("Estou usando adapters")
         tuning_config = SimpleNamespace(
         _device = device,
         ffn_num = 96,
@@ -212,7 +213,7 @@ def fine_tune():
             training = True,
             device = device
         )
-        
+        print(model)
     else:
         model = create_model(
         args.model,
