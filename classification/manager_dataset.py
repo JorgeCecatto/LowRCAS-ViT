@@ -53,8 +53,8 @@ class CustomDataset(Dataset):
         return len(self.instances)
 
 def get_tt_split(ds, bs):
-    train_idx, temp_idx = train_test_split(np.arange(len(ds)),test_size=0.3,shuffle=True,stratify=ds.targets)
-    valid_idx, test_idx = train_test_split(temp_idx,test_size=0.5,shuffle=True,stratify=ds.targets[temp_idx])
+    train_idx, temp_idx = train_test_split(np.arange(len(ds)),test_size=0.3,shuffle=True,stratify=ds.targets, random_state=42)
+    valid_idx, test_idx = train_test_split(temp_idx,test_size=0.5,shuffle=True,stratify=ds.targets[temp_idx], random_state=42)
 
     train_sampler = torch.utils.data.SubsetRandomSampler(train_idx)
     valid_sampler = torch.utils.data.SubsetRandomSampler(valid_idx)

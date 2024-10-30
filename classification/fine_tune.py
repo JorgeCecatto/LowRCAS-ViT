@@ -202,7 +202,8 @@ def evaluate_routine(model, dl_test, device):
     with open('classification_report.txt', 'w') as f:
         f.write(class_report)
     with open('confusion_matrix.txt', 'w') as f:
-        f.write(confusion)
+      for row in confusion:
+        f.write(' '.join(map(str, row)) + '\n')
 
 
 def fine_tune():
@@ -273,7 +274,7 @@ def fine_tune():
         training_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device=device)
         evaluate_routine(model, dl_test, device)
     elif (args.mode == 'eval'):
-        dataset = CustomDataset(args.eval_datapath, transform=transform)
+        dataset = CustomDataset(args.eval_data_path, transform=transform)
         dl_eval = torch.utils.data.DataLoader(dataset,batch_size=args.batch_size)
         evaluate_routine(model, dl_eval, device)
 
