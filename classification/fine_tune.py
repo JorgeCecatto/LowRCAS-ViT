@@ -248,7 +248,6 @@ def fine_tune():
             training = True,
             device = device
         )
-        print(model)
     else:
         model = create_model(
         args.model,
@@ -267,6 +266,15 @@ def fine_tune():
         model.head = nn.Linear(in_features=220, out_features=args.nb_classes, bias=True)
 
     model.to(device)
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    for name, param in model.named_parameters():
+      if param.requires_grad:
+          print(f'Nome: {name}, Tamanho: {param.size()}')
+
+    print("Número de Parâmetros totais:", total_params)
+    print("Número de Parâmetros treináveis:", trainable_params)
 
     if (args.mode =='train'):
         dataset = CustomDataset(args.data_path, transform=transform)
