@@ -8,6 +8,7 @@ Thank you for the public repository and your incredible contributions
 Before any execution add the necessary files following https://github.com/Tianfang-Zhang/CAS-ViT, as well as the network weights or some dataset
 
 ## Run in collab
+### Versão 0.5 Estável: 
 ```bash
 !git clone https://github.com/JorgeCecatto/LowRCAS-ViT.git
 ```
