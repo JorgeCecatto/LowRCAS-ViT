@@ -23,7 +23,6 @@ class Adapter(nn.Module):
         self.n_embd = config.d_model if d_model is None else d_model
         self.down_size = config.attn_bn if bottleneck is None else bottleneck
         self.drop_dimensions = drop_dimensions
-        print("adapter", self.n_embd)
         #_before
         self.adapter_layernorm_option = adapter_layernorm_option
         self.config = config
@@ -83,5 +82,4 @@ class Adapter(nn.Module):
             output = up + residual
         else:
             output = up
-        print("passei", output.size())
         return output

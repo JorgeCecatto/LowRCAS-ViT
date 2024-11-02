@@ -20,7 +20,7 @@ from model import RCViTWithAdapters
 from timm.data.constants import \
     IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
 from timm.data import create_transform
-from manager_dataset import CustomDataset, get_tt_split
+from manager_dataset import CustomDataset, get_tt_split, get_ttv_split
 import utils as utils
 import sklearn.metrics as metrics
 
@@ -105,6 +105,10 @@ def get_args_parser():
     # Dataset parameters
     parser.add_argument('--data_path', default='datasets/imagenet_full', type=str,
                         help='dataset path (path to full imagenet)')
+    parser.add_argument('--data_path_to_train', default='datasets/imagenet_full', type=str,
+                        help='dataset path to train')
+    parser.add_argument('--data_path_to_test', default='datasets/imagenet_full', type=str,
+                        help='dataset path to test')
     parser.add_argument('--eval_data_path', default=None, type=str,
                         help='dataset path for evaluation')
     parser.add_argument('--nb_classes', default=1000, type=int,
@@ -128,7 +132,7 @@ def get_args_parser():
                         help='start epoch')
     parser.add_argument('--adapters', default=True, type=str2bool,
                         help='choose the use of adapters')
-    parser.add_argument('--mode', default=True, type=str,
+    parser.add_argument('--mode', default='train', type=str,
                         help='choose the mode training/eval')
 
     return parser.parse_args()
@@ -241,7 +245,7 @@ def fine_tune():
             drop_path_rate=0.0,
             layer_scale_init_value=1e-6,
             head_init_scale=1.0,
-            input_res=384,
+            input_res=args.input_size,
             classifier_dropout=0.0,
             distillation=False,
             tuning_config = tuning_config,
@@ -256,7 +260,7 @@ def fine_tune():
         drop_path_rate=0.0,
         layer_scale_init_value=1e-6,
         head_init_scale=1.0,
-        input_res=384,
+        input_res=args.input_size,
         classifier_dropout=0.0,
         distillation=False
     )
@@ -278,13 +282,20 @@ def fine_tune():
 
     if (args.mode =='train'):
         dataset = CustomDataset(args.data_path, transform=transform)
-        dl_train, dl_val, dl_test = get_tt_split(dataset, args.batch_size)
+        dl_train, dl_val, dl_test = get_ttv_split(dataset, args.batch_size)
         training_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device=device)
         evaluate_routine(model, dl_test, device)
     elif (args.mode == 'eval'):
         dataset = CustomDataset(args.eval_data_path, transform=transform)
         dl_eval = torch.utils.data.DataLoader(dataset,batch_size=args.batch_size)
         evaluate_routine(model, dl_eval, device)
+    elif(args.mode == 'train__w_splited_folders'):
+        dataset_train = CustomDataset(args.data_path_to_train, transform=transform)
+        dataset_test = CustomDataset(args.data_path_to_test, transform=transform)
+        dl_train, dl_val = get_tt_split(dataset_train, args.batch_size)
+        dl_eval = torch.utils.data.DataLoader(dataset_test,batch_size=args.batch_size)
+        training_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device=device)
+        evaluate_routine(model, dl_test, device)
 
 
 fine_tune()
