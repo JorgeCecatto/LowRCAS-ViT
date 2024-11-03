@@ -293,7 +293,7 @@ def fine_tune():
         dataset_train = CustomDataset(args.data_path_to_train, transform=transform)
         dataset_test = CustomDataset(args.data_path_to_test, transform=transform)
         dl_train, dl_val = get_tt_split(dataset_train, args.batch_size)
-        dl_eval = torch.utils.data.DataLoader(dataset_test,batch_size=args.batch_size)
+        dl_test = torch.utils.data.DataLoader(dataset_test,batch_size=args.batch_size)
         training_routine(model, 15, dl_train, dl_valid=dl_val, lr=args.lr, device=device)
         evaluate_routine(model, dl_test, device)
 
