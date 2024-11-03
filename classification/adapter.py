@@ -34,7 +34,7 @@ class Adapter(nn.Module):
         else:
             self.scale = float(adapter_scalar)
 
-        emb_size = int((self.down_size/4) ** 2)
+        emb_size = int(int(self.down_size/4) ** 2)
 
         self.pooling_layer = nn.MaxPool2d(kernel_size=4, stride=4, return_indices=True)
         self.unpool = nn.MaxUnpool2d(4, stride=4)
@@ -56,11 +56,11 @@ class Adapter(nn.Module):
                 nn.init.zeros_(self.up_proj.bias)
 
     def forward(self, x, add_residual=True, residual=None):
+        original_dim = x
         residual = x if residual is None else residual
         x = self.conv_layer(x)
         if self.adapter_layernorm_option == 'in':
             x = self.adapter_layer_norm_before(x)
-
         x, indices = self.pooling_layer(x)
         dim = x.size()
         x = x.view(x.size(0), -1)
@@ -72,7 +72,7 @@ class Adapter(nn.Module):
         up = up * self.scale
         up = up.unsqueeze(1)
         up = up.view(dim[0], 1, dim[2], dim[3])
-        up = self.unpool(up, indices)
+        up = self.unpool(up, indices, output_size=original_dim.size())
         if self.adapter_layernorm_option == 'out':
             up = self.adapter_layer_norm_before(up)
         up = self.deconv_layer(up)
